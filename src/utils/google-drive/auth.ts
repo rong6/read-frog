@@ -5,7 +5,7 @@ import { GOOGLE_DRIVE_TOKEN_STORAGE_KEY } from "../constants/config"
 import { logger } from "../logger"
 import { runtimeFetch } from "@/utils/runtime-fetch"
 
-const GOOGLE_CLIENT_ID = env.WXT_GOOGLE_CLIENT_ID ?? "YOUR_CLIENT_ID"
+const GOOGLE_CLIENT_ID = env.WXT_GOOGLE_CLIENT_ID ?? ""
 const GOOGLE_REDIRECT_URI = browser.identity.getRedirectURL()
 const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/drive.appdata",
@@ -59,6 +59,12 @@ async function getTokenFromStorage(): Promise<GoogleAuthToken | null> {
  */
 export async function authenticateGoogleDriveAndSaveTokenToStorage(): Promise<string> {
   try {
+    // 未配置 client_id 时直接抛错，避免用空串发起注定失败的 OAuth 请求。
+    if (!GOOGLE_CLIENT_ID) {
+      throw new Error(
+        "Google Drive client_id is not configured. Set WXT_GOOGLE_CLIENT_ID at build time to use Google Drive sync.",
+      )
+    }
     const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth")
     authUrl.searchParams.set("client_id", GOOGLE_CLIENT_ID)
     authUrl.searchParams.set("response_type", "token")

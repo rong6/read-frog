@@ -110,7 +110,9 @@ export function createExtensionClientEnvSchema(isProd: boolean, skipRequiredProd
     WXT_AUTH_COOKIE_DOMAINS: z
       .string()
       .transform((value, ctx) => parseCommaSeparatedEntries(value, ctx, strictCookieDomainSchema)),
-    WXT_GOOGLE_CLIENT_ID: requiresProductionEnv ? z.string().min(1) : optionalNonEmptyStringSchema,
+    // Google Drive 同步功能在没有配置 client_id 时会优雅降级（Sync 时给出明确
+    // 错误提示），不会影响其他功能，因此 production 构建也允许留空。
+    WXT_GOOGLE_CLIENT_ID: optionalNonEmptyStringSchema,
     WXT_POSTHOG_HOST: requiresProductionEnv ? strictUrlSchema : optionalStrictUrlSchema,
     WXT_POSTHOG_API_KEY: requiresProductionEnv ? z.string().min(1) : optionalNonEmptyStringSchema,
     WXT_POSTHOG_TEST_UUID: optionalNonEmptyStringSchema,
