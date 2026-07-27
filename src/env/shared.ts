@@ -90,8 +90,10 @@ export function resolveExtensionEnv(rawEnv: RawExtensionEnv) {
 
   return {
     ...rawEnv,
-    WXT_API_URL: rawEnv.WXT_API_URL ?? defaults.WXT_API_URL,
-    WXT_WEBSITE_URL: rawEnv.WXT_WEBSITE_URL ?? defaults.WXT_WEBSITE_URL,
+    // GitHub Actions exposes an unset `vars.*` value as an empty string. Treat
+    // that the same as an absent optional override so hosted builds use defaults.
+    WXT_API_URL: rawEnv.WXT_API_URL || defaults.WXT_API_URL,
+    WXT_WEBSITE_URL: rawEnv.WXT_WEBSITE_URL || defaults.WXT_WEBSITE_URL,
     WXT_OFFICIAL_SITE_ORIGINS:
       rawEnv.WXT_OFFICIAL_SITE_ORIGINS ?? defaults.WXT_OFFICIAL_SITE_ORIGINS,
     WXT_AUTH_COOKIE_DOMAINS: rawEnv.WXT_AUTH_COOKIE_DOMAINS ?? defaults.WXT_AUTH_COOKIE_DOMAINS,

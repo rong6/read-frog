@@ -62,6 +62,15 @@ describe("extension env resolution", () => {
     })
   })
 
+  it("uses defaults for empty optional overrides", () => {
+    expect(
+      resolveExtensionEnv({
+        WXT_API_URL: "",
+        WXT_WEBSITE_URL: "",
+      }),
+    ).toEqual(PRODUCTION_EXTENSION_ENV_DEFAULTS)
+  })
+
   it("passes through unrelated env vars untouched", () => {
     expect(
       resolveExtensionEnv({
