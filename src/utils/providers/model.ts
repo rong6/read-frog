@@ -27,6 +27,7 @@ import { DEFAULT_AZURE_API_MODE, isCustomLLMProvider } from "@/types/config/prov
 import { compactObject } from "@/types/utils"
 import { getLLMProvidersConfig, getProviderConfigById } from "../config/helpers"
 import { CONFIG_STORAGE_KEY } from "../constants/config"
+import { providerFetch } from "@/utils/runtime-fetch"
 import { getProviderHeadersWithOverride } from "./headers"
 import { resolveModelId } from "./model-id"
 
@@ -100,6 +101,10 @@ async function getLanguageModelById(providerId: string) {
   const headers = getProviderHeadersWithOverride(providerConfig.provider, providerConfig.headers)
   const providerSpecificSettings = getProviderSpecificSettings(providerConfig)
 
+  // `providerFetch` is undefined in the extension build (the SDK keeps its own
+  // default). In the userscript build it is the GM_xmlhttpRequest-backed fetch,
+  // which is what lets a provider call escape the host page's CORS/CSP without
+  // changing anything else about how models are constructed.
   const provider = isCustomLLMProvider(providerConfig.provider)
     ? CREATE_AI_MAPPER[providerConfig.provider]({
         ...providerSpecificSettings,
@@ -108,12 +113,14 @@ async function getLanguageModelById(providerId: string) {
         supportsStructuredOutputs: true,
         ...(providerConfig.apiKey && { apiKey: providerConfig.apiKey }),
         ...(headers && { headers }),
+        ...(providerFetch && { fetch: providerFetch }),
       })
     : CREATE_AI_MAPPER[providerConfig.provider]({
         ...providerSpecificSettings,
         ...(providerConfig.baseURL && { baseURL: providerConfig.baseURL }),
         ...(providerConfig.apiKey && { apiKey: providerConfig.apiKey }),
         ...(headers && { headers }),
+        ...(providerFetch && { fetch: providerFetch }),
       })
 
   const modelId = resolveModelId(providerConfig.model)

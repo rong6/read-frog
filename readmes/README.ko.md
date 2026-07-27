@@ -1,3 +1,38 @@
+> [!IMPORTANT]
+> ## This is an unofficial userscript port
+>
+> This repository is a **fork** of [mengxi-ream/read-frog](https://github.com/mengxi-ream/read-frog)
+> that ports the browser extension to a **Tampermonkey / Violentmonkey userscript**,
+> so it can run on mobile browsers where extensions are unavailable.
+>
+> **It is not affiliated with, endorsed by, or supported by the Read Frog project
+> or its authors.** Do not report problems you hit here to the upstream issue
+> tracker — they are almost certainly this port's fault, not theirs. Open an issue
+> [on this fork](https://github.com/rong6/read-frog/issues) instead.
+>
+> The port replaces the extension platform (storage, messaging, networking, the
+> settings page) and leaves the application code alone, so features and UI should
+> match upstream. Where they cannot, the differences are listed in
+> **[USERSCRIPT.md](./USERSCRIPT.md)** — read it before filing anything.
+>
+> Licensed **GPL-3.0**, same as upstream. Note that upstream is dual-licensed and
+> also grants commercial licences; **that grant is theirs to make, not this
+> fork's**. A copy taken from here is GPL-3.0 only.
+>
+> ### Install
+>
+> 1. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/).
+> 2. Install **[read-frog.user.js](https://rong6.github.io/read-frog/read-frog.user.js)**.
+> 3. Open **<https://rong6.github.io/read-frog/>** to configure your AI providers.
+>
+> Building it yourself: see [USERSCRIPT.md](./USERSCRIPT.md).
+>
+> ---
+>
+> *Everything below is upstream's original README, kept for reference. Store
+> links, version badges and user counts refer to the official extension, not to
+> this port.*
+
 <div align="center"><a name="readme-top"></a>
 
 [![Read Frog banner][image-banner]][website]

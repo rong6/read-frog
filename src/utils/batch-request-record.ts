@@ -2,9 +2,23 @@ import type { ProviderConfig } from "@/types/config/provider"
 import type BatchRequestRecord from "@/utils/db/dexie/tables/batch-request-record"
 import { isLLMProviderConfig } from "@/types/config/provider"
 import { getRandomUUID } from "@/utils/crypto-polyfill"
-import { db } from "@/utils/db/dexie/db"
+import {
+  addBatchRequestRecords,
+  getAllBatchRequestRecords,
+} from "@/utils/db/batch-request-record-store"
 import { getDateFromDaysBack, numberToPercentage } from "@/utils/utils"
 import { logger } from "./logger"
+
+// The records live on the WXT `storage` API rather than in Dexie, because
+// IndexedDB is origin-scoped and the dashboard runs on its own origin. See
+// `utils/db/batch-request-record-store.ts` for the storage key and the details.
+export {
+  addBatchRequestRecords,
+  BATCH_REQUEST_RECORD_MAX_COUNT,
+  clearBatchRequestRecords,
+  countBatchRequestRecords,
+  pruneBatchRequestRecords,
+} from "@/utils/db/batch-request-record-store"
 
 export async function getRangeBatchRequestRecords(startDay: number, endDay?: number) {
   const startDate = getDateFromDaysBack(startDay)
@@ -13,7 +27,11 @@ export async function getRangeBatchRequestRecords(startDay: number, endDay?: num
   startDate.setHours(0, 0, 0, 0)
   endDate.setHours(23, 59, 59, 999)
 
-  return await db.batchRequestRecord.where("createdAt").between(startDate, endDate).toArray()
+  // The Dexie version indexed `createdAt` and range-scanned it. A key-value
+  // backend has no indexes, so the range becomes a filter over the whole set —
+  // affordable precisely because that set is hard-capped.
+  const records = await getAllBatchRequestRecords()
+  return records.filter((record) => record.createdAt >= startDate && record.createdAt <= endDate)
 }
 
 export async function putBatchRequestRecord({
@@ -29,13 +47,15 @@ export async function putBatchRequestRecord({
   const modelName = providerModel.isCustomModel ? providerModel.customModel : providerModel.model
 
   try {
-    await db.batchRequestRecord.put({
-      key: getRandomUUID(),
-      createdAt: new Date(),
-      originalRequestCount,
-      provider,
-      model: modelName ?? "",
-    })
+    await addBatchRequestRecords([
+      {
+        key: getRandomUUID(),
+        createdAt: new Date(),
+        originalRequestCount,
+        provider,
+        model: modelName ?? "",
+      },
+    ])
   } catch (error) {
     logger.error("Failed to put batch request record", error)
   }

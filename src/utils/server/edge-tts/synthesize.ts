@@ -9,6 +9,7 @@ import {
 import { clearEdgeTTSTokenCache, getEdgeTTSEndpointToken } from "./endpoint"
 import { EdgeTTSError } from "./errors"
 import { buildSSMLRequest } from "./ssml"
+import { runtimeFetchBinary } from "@/utils/runtime-fetch"
 
 function toRetryDelay(attempt: number): number {
   const base = EDGE_TTS_RETRY_BASE_DELAY_MS * (attempt + 1)
@@ -89,7 +90,7 @@ async function synthesizeChunk(request: EdgeTTSSynthesizeRequest): Promise<EdgeT
   const endpointInfo = await getEdgeTTSEndpointToken()
   const url = `https://${endpointInfo.endpoint.r}.tts.speech.microsoft.com/cognitiveservices/v1`
 
-  const response = await fetch(url, {
+  const response = await runtimeFetchBinary(url, {
     method: "POST",
     headers: {
       Authorization: endpointInfo.endpoint.t,

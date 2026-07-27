@@ -25,8 +25,18 @@ export function shouldProxyAssetUrl(resourceUrl: string, pageUrl = getCurrentPag
   }
 
   try {
-    const protocol = new URL(pageUrl).protocol
-    return !EXTENSION_PROTOCOLS.has(protocol)
+    const page = new URL(pageUrl)
+    if (EXTENSION_PROTOCOLS.has(page.protocol)) {
+      return false
+    }
+    // Same-origin assets need no proxy — the page can just load them. This
+    // matters for the userscript port's dashboard, which serves its own bundled
+    // provider logos over http(s): without this check every one of them would
+    // take a needless round-trip through GM_xmlhttpRequest.
+    if (new URL(resourceUrl, pageUrl).origin === page.origin) {
+      return false
+    }
+    return true
   } catch {
     return true
   }

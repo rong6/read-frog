@@ -113,6 +113,8 @@ export default defineContentScript({
 
     await initI18n(config?.uiLanguage)
 
-    void mountSelectionUI(ctx)
+    void mountSelectionUI(ctx).catch((error: unknown) => {
+      console.error("[read-frog] selection toolbar failed to mount", error)
+    })
   },
 })

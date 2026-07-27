@@ -540,4 +540,98 @@ describe("floatingButton controls", () => {
       expect(hiddenButton).toHaveClass("translate-x-0")
     }
   })
+  it("reveals the controls on a touch long press without translating", () => {
+    vi.useFakeTimers()
+    renderFloatingButton({ clickAction: "translate" })
+
+    const mainButton = getMainButton()
+    const closeTrigger = screen.getByRole("button", { name: "Close floating button" })
+
+    // A touch screen has no hover, so the controls start hidden.
+    expect(closeTrigger).toHaveClass("invisible")
+
+    fireEvent.pointerDown(mainButton, {
+      pointerId: 1,
+      pointerType: "touch",
+      clientX: 900,
+      clientY: 500,
+    })
+    act(() => {
+      vi.advanceTimersByTime(400)
+    })
+
+    expect(closeTrigger).toHaveClass("pointer-events-auto")
+
+    fireEvent.pointerUp(mainButton, {
+      pointerId: 1,
+      pointerType: "touch",
+      clientX: 900,
+      clientY: 500,
+    })
+
+    // The long press was the gesture; it must not also start a translation.
+    expect(sendMessage).not.toHaveBeenCalledWith(
+      "tryToSetEnablePageTranslationOnContentScript",
+      expect.anything(),
+    )
+  })
+
+  it("still translates on a short touch tap", () => {
+    vi.useFakeTimers()
+    renderFloatingButton({ clickAction: "translate" })
+
+    const mainButton = getMainButton()
+
+    fireEvent.pointerDown(mainButton, {
+      pointerId: 1,
+      pointerType: "touch",
+      clientX: 900,
+      clientY: 500,
+    })
+    vi.advanceTimersByTime(200)
+    fireEvent.pointerUp(mainButton, {
+      pointerId: 1,
+      pointerType: "touch",
+      clientX: 900,
+      clientY: 500,
+    })
+
+    expect(sendMessage).toHaveBeenCalledWith(
+      "tryToSetEnablePageTranslationOnContentScript",
+      expect.objectContaining({ enabled: true }),
+    )
+  })
+
+  it("collapses the controls when the next touch lands elsewhere", () => {
+    vi.useFakeTimers()
+    renderFloatingButton({ clickAction: "translate" })
+
+    const mainButton = getMainButton()
+    const closeTrigger = screen.getByRole("button", { name: "Close floating button" })
+
+    fireEvent.pointerDown(mainButton, {
+      pointerId: 1,
+      pointerType: "touch",
+      clientX: 900,
+      clientY: 500,
+    })
+    act(() => {
+      vi.advanceTimersByTime(400)
+    })
+    fireEvent.pointerUp(mainButton, {
+      pointerId: 1,
+      pointerType: "touch",
+      clientX: 900,
+      clientY: 500,
+    })
+
+    expect(closeTrigger).toHaveClass("pointer-events-auto")
+
+    // There is no mouseleave on a touch screen, so a tap on the page collapses.
+    act(() => {
+      fireEvent.pointerDown(document.body, { pointerId: 2, pointerType: "touch" })
+    })
+
+    expect(closeTrigger).toHaveClass("invisible")
+  })
 })

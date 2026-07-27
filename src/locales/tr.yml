@@ -804,6 +804,67 @@ options:
             title: Birleştirilmiş yapılandırmada doğrulama hataları var
             description: "Düzeltmek için aşağıdaki farklılıkları ayarlayın:"
           moreErrors: ...ve $1 hata daha
+      webdav:
+        title: WebDAV Cloud Sync
+        description: Syncs your config with any WebDAV server. Downloads config when remote is newer, uploads config when local is newer
+        serverUrl: Server URL
+        serverUrlPlaceholder: "https://dav.example.com/remote.php/dav/files/username"
+        username: Username
+        usernamePlaceholder: WebDAV account name
+        password: Password
+        passwordPlaceholder: WebDAV password or app password
+        directory: Remote directory
+        directoryPlaceholder: read-frog
+        notConfigured: Enter the server URL and username to enable WebDAV sync
+        test: Test connection
+        testing: Testing...
+        testSuccess: Connected to the WebDAV server
+        testError: Could not connect to the WebDAV server
+        sync: Sync to WebDAV
+        syncing: Senkronize ediliyor...
+        upload: Upload
+        uploading: Uploading...
+        download: Download
+        downloading: Downloading...
+        syncSuccess:
+          uploaded: Yerel ayarlar buluta yüklendi
+          downloaded: Uzak ayarlar uygulandı
+          sameChanges: Yerel ve uzak değişiklikler aynı, senkronize edildi
+          noChange: Zaten güncel
+          unresolved: Çakışmalar çözüldü ve senkronize edildi
+        syncError: Senkronizasyon başarısız, lütfen tekrar deneyin
+        lastSyncTime: Son senkronizasyon
+        unresolved:
+          title: Yapılandırma Senkronizasyon Çözümü
+          description: Yerel ve uzak yapılandırmalar farklı. Lütfen her alan için hangi sürümün tutulacağını seçin.
+          resolved: Çözüldü
+          unresolved: Çözülmedi
+          localValue: Yerel Değer
+          remoteValue: Uzak Değer
+          useLocal: Yereli Kullan
+          useRemote: Uzakı Kullan
+          useAllLocal: Tüm Yereli Kullan
+          useAllRemote: Tüm Uzakı Kullan
+          reset: Seçimi Sıfırla
+          progress: $1/$2 değişiklik çözüldü
+          confirm: Senkronizasyonu Onayla
+          cancel: İptal
+          hasUnresolvedInChildren: ⚠ Çözülmemiş değişiklikler içeriyor
+          item: öğe
+          items: öğe
+          unresolvedPrompt: "[Çözülmedi - Lütfen seçin]"
+          localLatest: En Son Yerel
+          remoteLatest: En Son Uzak
+          bothChanged: Her ikisi de değişti
+          localChanged: Yerel değişti
+          remoteChanged: Uzak değişti
+          configValid: Yapılandırma geçerli
+          configInvalid: Yapılandırma geçersiz
+          resolveToContinue: Devam etmek için çakışmaları çözün
+          validationAlert:
+            title: Birleştirilmiş yapılandırmada doğrulama hataları var
+            description: "Düzeltmek için aşağıdaki farklılıkları ayarlayın:"
+          moreErrors: ...ve $1 hata daha
     backup:
       title: Yapılandırma Yedekleme
       description: Yapılandırma değiştirilirse otomatik yedeklemeler her saat oluşturulur. Önceki yapılandırmaları buradan geri yükleyebilirsiniz. (Maksimum $1 yedekleme)

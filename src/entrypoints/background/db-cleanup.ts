@@ -1,4 +1,10 @@
 import { browser } from "#imports"
+import {
+  BATCH_REQUEST_RECORD_MAX_COUNT,
+  clearBatchRequestRecords,
+  pruneBatchRequestRecords,
+} from "@/utils/batch-request-record"
+import { broadcastCacheClear, watchCacheClearCommands } from "@/utils/db/cache-clear-broadcast"
 import { db } from "@/utils/db/dexie/db"
 import { logger } from "@/utils/logger"
 
@@ -8,13 +14,53 @@ export const TRANSLATION_CACHE_CLEANUP_ALARM = "cache-cleanup"
 export const TRANSLATION_CACHE_MAX_AGE_MINUTES = 7 * 24 * 60
 
 export const REQUEST_RECORD_CLEANUP_ALARM = "request-record-cleanup"
-export const REQUEST_RECORD_MAX_COUNT = 10000
+// Alias of the store's own cap, so there is one number: the store enforces it on
+// every write (the records share a single storage value now and cannot be
+// allowed to grow unbounded), and this alarm only has to catch up on age.
+export const REQUEST_RECORD_MAX_COUNT = BATCH_REQUEST_RECORD_MAX_COUNT
 export const REQUEST_RECORD_MAX_AGE_DAYS = 120
 
 export const SUMMARY_CACHE_CLEANUP_ALARM = "summary-cache-cleanup"
 export const SUMMARY_CACHE_MAX_AGE_MINUTES = 7 * 24 * 60
 
+let isCleanupDisabled = false
+
+/**
+ * Opt this context out of the cleanup alarms entirely. Must be called before the
+ * background's `main()` runs.
+ *
+ * Everything below prunes Dexie, which is per-origin, while the scheduling that
+ * drives it may not be: in the userscript build the alarms are claimed through a
+ * single "last run" stamp shared by every context. A context that holds a
+ * *different* database from the one translations are written to must therefore
+ * stay out of the claim rather than win it, prune nothing, and suppress the real
+ * cleanup until the period comes round again.
+ */
+export function disableDatabaseCleanup() {
+  isCleanupDisabled = true
+}
+
 export async function setUpDatabaseCleanup() {
+  // Deliberately above the opt-out below: skipping the alarms is about not
+  // winning a *shared* claim on periodic work, while this is about the database
+  // this context owns. A context that prunes nothing still has to honour a clear
+  // — and a "clear cache" click on the dashboard cannot reach the per-origin
+  // caches any other way. Inert in the extension build.
+  watchCacheClearCommands({
+    translationRelated: async () => {
+      await cleanupAllTranslationCache()
+      await cleanupAllSummaryCache()
+    },
+    aiSegmentation: async () => {
+      await cleanupAllAiSegmentationCache()
+    },
+  })
+
+  if (isCleanupDisabled) {
+    logger.info("Database cleanup disabled for this context")
+    return
+  }
+
   // Set up periodic alarms (only if they don't exist)
   const existingCacheAlarm = await browser.alarms.get(TRANSLATION_CACHE_CLEANUP_ALARM)
   if (!existingCacheAlarm) {
@@ -82,38 +128,22 @@ export async function cleanupAllTranslationCache() {
 
 async function cleanupOldRequestRecords() {
   try {
-    const totalCount = await db.batchRequestRecord.count()
+    // Age and count are pruned in one pass so a concurrent write cannot slip
+    // between them — the records are a single storage value now, not a table.
+    const { deletedByCount, deletedByAge } = await pruneBatchRequestRecords({
+      maxCount: REQUEST_RECORD_MAX_COUNT,
+      maxAgeDays: REQUEST_RECORD_MAX_AGE_DAYS,
+    })
 
-    // Check if count exceeds maximum
-    if (totalCount > REQUEST_RECORD_MAX_COUNT) {
-      const excessCount = totalCount - REQUEST_RECORD_MAX_COUNT
-
-      // Delete oldest records to bring count back to maximum
-      const oldestRecords = await db.batchRequestRecord
-        .orderBy("createdAt")
-        .limit(excessCount)
-        .toArray()
-
-      const keysToDelete = oldestRecords.map((record) => record.key)
-      await db.batchRequestRecord.bulkDelete(keysToDelete)
-
+    if (deletedByCount > 0) {
       logger.info(
-        `Request records cleanup: Deleted ${excessCount} oldest records (count exceeded ${REQUEST_RECORD_MAX_COUNT})`,
+        `Request records cleanup: Deleted ${deletedByCount} oldest records (count exceeded ${REQUEST_RECORD_MAX_COUNT})`,
       )
     }
 
-    // Delete records older than max age
-    const cutoffDate = new Date()
-    cutoffDate.setDate(cutoffDate.getDate() - REQUEST_RECORD_MAX_AGE_DAYS)
-
-    const deletedByAgeCount = await db.batchRequestRecord
-      .where("createdAt")
-      .below(cutoffDate)
-      .delete()
-
-    if (deletedByAgeCount > 0) {
+    if (deletedByAge > 0) {
       logger.info(
-        `Request records cleanup: Deleted ${deletedByAgeCount} records older than ${REQUEST_RECORD_MAX_AGE_DAYS} days`,
+        `Request records cleanup: Deleted ${deletedByAge} records older than ${REQUEST_RECORD_MAX_AGE_DAYS} days`,
       )
     }
   } catch (error) {
@@ -124,7 +154,7 @@ async function cleanupOldRequestRecords() {
 export async function cleanupAllRequestRecords() {
   try {
     // Delete all batch request records
-    await db.batchRequestRecord.clear()
+    await clearBatchRequestRecords()
 
     logger.info(`Request records cleanup: Deleted all batch request records`)
   } catch (error) {
@@ -171,4 +201,25 @@ export async function cleanupAllAiSegmentationCache() {
     logger.error("Failed to cleanup all AI segmentation cache:", error)
     throw error
   }
+}
+
+/**
+ * What the dashboard's "clear cache" button ends up calling.
+ *
+ * It clears this context's own database first — in the extension build that is
+ * the only one there is and the broadcast below does nothing, so the behaviour
+ * is exactly what it always was — and then tells the other origins to do the
+ * same. Without that second half the userscript build wipes the dashboard's own
+ * empty database and reports success, which is a lie.
+ */
+export async function clearAllTranslationRelatedCache() {
+  await cleanupAllTranslationCache()
+  await cleanupAllSummaryCache()
+  await broadcastCacheClear("translationRelated")
+}
+
+/** As above, for the AI segmentation cache. */
+export async function clearAllAiSegmentationCache() {
+  await cleanupAllAiSegmentationCache()
+  await broadcastCacheClear("aiSegmentation")
 }

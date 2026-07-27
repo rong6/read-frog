@@ -11,6 +11,7 @@ import {
 } from "./constants"
 import { EdgeTTSError } from "./errors"
 import { generateTranslatorSignature } from "./signature"
+import { runtimeFetch } from "@/utils/runtime-fetch"
 
 const BASE64_URL_SAFE_HYPHEN_PATTERN = /-/g
 const BASE64_URL_SAFE_UNDERSCORE_PATTERN = /_/g
@@ -82,7 +83,7 @@ export async function getEdgeTTSEndpointToken(): Promise<EdgeTTSTokenInfo> {
     const signature = await generateTranslatorSignature(EDGE_TTS_ENDPOINT_URL)
     const traceId = getRandomUUID().replace(HYPHEN_PATTERN, "")
 
-    const response = await fetch(EDGE_TTS_ENDPOINT_URL, {
+    const response = await runtimeFetch(EDGE_TTS_ENDPOINT_URL, {
       method: "POST",
       headers: {
         "Accept-Language": "zh-Hans",

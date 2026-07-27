@@ -7,13 +7,13 @@ const alarmsAddListenerMock = vi.fn<(...args: any[]) => any>()
 const translationDeleteMock = vi.fn<(...args: any[]) => any>()
 const translationWhereMock = vi.fn<(...args: any[]) => any>()
 
-const requestCountMock = vi.fn<(...args: any[]) => any>()
-const requestOrderByToArrayMock = vi.fn<(...args: any[]) => any>()
-const requestOrderByLimitMock = vi.fn<(...args: any[]) => any>()
-const requestOrderByMock = vi.fn<(...args: any[]) => any>()
-const requestBulkDeleteMock = vi.fn<(...args: any[]) => any>()
-const requestDeleteByAgeMock = vi.fn<(...args: any[]) => any>()
-const requestWhereMock = vi.fn<(...args: any[]) => any>()
+// The batch request records are no longer a Dexie table; they live on the shared
+// `storage` API behind this access layer. See utils/db/batch-request-record-store.
+const pruneRequestRecordsMock = vi.fn<(...args: any[]) => any>()
+const clearRequestRecordsMock = vi.fn<(...args: any[]) => any>()
+
+const broadcastCacheClearMock = vi.fn<(...args: any[]) => any>()
+const watchCacheClearCommandsMock = vi.fn<(...args: any[]) => any>()
 
 const summaryDeleteMock = vi.fn<(...args: any[]) => any>()
 const summaryWhereMock = vi.fn<(...args: any[]) => any>()
@@ -45,17 +45,21 @@ vi.mock("wxt/browser", () => ({
   },
 }))
 
+vi.mock("@/utils/batch-request-record", () => ({
+  BATCH_REQUEST_RECORD_MAX_COUNT: 2000,
+  clearBatchRequestRecords: clearRequestRecordsMock,
+  pruneBatchRequestRecords: pruneRequestRecordsMock,
+}))
+
+vi.mock("@/utils/db/cache-clear-broadcast", () => ({
+  broadcastCacheClear: broadcastCacheClearMock,
+  watchCacheClearCommands: watchCacheClearCommandsMock,
+}))
+
 vi.mock("@/utils/db/dexie/db", () => ({
   db: {
     translationCache: {
       where: translationWhereMock,
-      clear: vi.fn<(...args: any[]) => any>(),
-    },
-    batchRequestRecord: {
-      count: requestCountMock,
-      orderBy: requestOrderByMock,
-      bulkDelete: requestBulkDeleteMock,
-      where: requestWhereMock,
       clear: vi.fn<(...args: any[]) => any>(),
     },
     articleSummaryCache: {
@@ -90,21 +94,10 @@ describe("setUpDatabaseCleanup", () => {
       }),
     })
 
-    requestCountMock.mockResolvedValue(0)
-    requestOrderByToArrayMock.mockResolvedValue([])
-    requestOrderByLimitMock.mockReturnValue({
-      toArray: requestOrderByToArrayMock,
-    })
-    requestOrderByMock.mockReturnValue({
-      limit: requestOrderByLimitMock,
-    })
-    requestBulkDeleteMock.mockResolvedValue(undefined)
-    requestDeleteByAgeMock.mockResolvedValue(0)
-    requestWhereMock.mockReturnValue({
-      below: () => ({
-        delete: requestDeleteByAgeMock,
-      }),
-    })
+    pruneRequestRecordsMock.mockResolvedValue({ deletedByCount: 0, deletedByAge: 0 })
+    clearRequestRecordsMock.mockResolvedValue(undefined)
+
+    broadcastCacheClearMock.mockResolvedValue(undefined)
 
     summaryDeleteMock.mockResolvedValue(0)
     summaryWhereMock.mockReturnValue({
@@ -122,8 +115,12 @@ describe("setUpDatabaseCleanup", () => {
     expect(alarmsAddListenerMock).toHaveBeenCalledTimes(1)
 
     expect(translationWhereMock).not.toHaveBeenCalled()
-    expect(requestCountMock).not.toHaveBeenCalled()
+    expect(pruneRequestRecordsMock).not.toHaveBeenCalled()
     expect(summaryWhereMock).not.toHaveBeenCalled()
+
+    // The per-origin caches are cleared through a broadcast the dashboard sends;
+    // this is the end that listens for it.
+    expect(watchCacheClearCommandsMock).toHaveBeenCalledTimes(1)
   })
 
   it("does not recreate alarms when they already exist", async () => {
@@ -160,14 +157,26 @@ describe("setUpDatabaseCleanup", () => {
 
     await alarmListener({ name: TRANSLATION_CACHE_CLEANUP_ALARM })
     expect(translationWhereMock).toHaveBeenCalledTimes(1)
-    expect(requestCountMock).not.toHaveBeenCalled()
+    expect(pruneRequestRecordsMock).not.toHaveBeenCalled()
     expect(summaryWhereMock).not.toHaveBeenCalled()
 
     await alarmListener({ name: REQUEST_RECORD_CLEANUP_ALARM })
-    expect(requestCountMock).toHaveBeenCalledTimes(1)
+    expect(pruneRequestRecordsMock).toHaveBeenCalledTimes(1)
     expect(summaryWhereMock).not.toHaveBeenCalled()
 
     await alarmListener({ name: SUMMARY_CACHE_CLEANUP_ALARM })
     expect(summaryWhereMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("clears the local caches and broadcasts to the other origins", async () => {
+    const { clearAllAiSegmentationCache, clearAllTranslationRelatedCache } = await import(
+      "../db-cleanup"
+    )
+
+    await clearAllTranslationRelatedCache()
+    expect(broadcastCacheClearMock).toHaveBeenLastCalledWith("translationRelated")
+
+    await clearAllAiSegmentationCache()
+    expect(broadcastCacheClearMock).toHaveBeenLastCalledWith("aiSegmentation")
   })
 })

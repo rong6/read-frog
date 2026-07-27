@@ -1,4 +1,4 @@
-import { db } from "@/utils/db/dexie/db"
+import { countBatchRequestRecords } from "@/utils/batch-request-record"
 import { generateMockBatchRequestRecords } from "@/utils/db/dexie/mock-data"
 import { logger } from "@/utils/logger"
 
@@ -8,7 +8,7 @@ import { logger } from "@/utils/logger"
  */
 export async function initMockData() {
   if (import.meta.env.DEV && import.meta.env.WXT_MOCK_DATA === "true") {
-    const existingCount = await db.batchRequestRecord.count()
+    const existingCount = await countBatchRequestRecords()
     if (existingCount > 0) {
       logger.info(`[Mock Data] Skipping initialization - ${existingCount} records already exist`)
       return

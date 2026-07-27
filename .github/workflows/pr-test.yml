@@ -1,9 +1,14 @@
+# NOTE (userscript fork): this workflow is inherited from upstream and its
+# automatic triggers have been removed. This fork exists only to build the
+# userscript; PR gates, scheduled chores and the extension release/publish
+# pipeline are upstream's business, and left firing they would either fail for
+# want of secrets or do something genuinely unwanted (publish a release, close
+# this fork's issues). Kept runnable by hand rather than deleted, so the
+# upstream logic is still here if it is ever needed.
 name: PR - Test & Build
 
 on:
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
 
 env:
   WXT_SKIP_ENV_VALIDATION: true

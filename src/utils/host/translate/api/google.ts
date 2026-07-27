@@ -1,6 +1,7 @@
 import type { TranslationTextFormat } from "@/types/config/translate"
 import { escapeText } from "entities"
 import { attachRequestErrorMeta } from "@/utils/request/retry-policy"
+import { runtimeFetch } from "@/utils/runtime-fetch"
 
 const GOOGLE_TRANSLATE_HTML_URL = "https://translate-pa.googleapis.com/v1/translateHtml"
 const GOOGLE_TRANSLATE_HTML_API_KEY = "AIzaSyATBXajvzQLTDHEQbcpq0Ihe0vWDHmO520"
@@ -28,7 +29,7 @@ export async function googleTranslate(
   // knows whether the container's white-space CSS makes newlines meaningful;
   // ordinary pages rely on this collapsing for pretty-printed source newlines.
   const requestText = options?.textFormat === "html" ? sourceText : escapeText(sourceText)
-  const resp = await fetch(GOOGLE_TRANSLATE_HTML_URL, {
+  const resp = await runtimeFetch(GOOGLE_TRANSLATE_HTML_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json+protobuf",

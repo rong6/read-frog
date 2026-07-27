@@ -14,6 +14,7 @@ import { getLocalConfig } from "@/utils/config/storage"
 import { DEFAULT_CONFIG } from "@/utils/constants/config"
 import { initI18n } from "@/utils/i18n"
 import { LocaleBoundary } from "@/utils/i18n/locale-boundary"
+import { ensureIconifyBackgroundFetch } from "@/utils/iconify/setup-background-fetch"
 import { renderPersistentReactRoot } from "@/utils/react-root"
 import { queryClient } from "@/utils/tanstack-query"
 import { applyTheme, getLocalThemeMode, isDarkMode } from "@/utils/theme"
@@ -32,6 +33,10 @@ function HydrateAtoms({ initialValues, children }: HydrateAtomsProps) {
 }
 
 async function initApp() {
+  // Same reason as the options entry: the hub's provider and action icons are
+  // `<Icon>`s, and their icon-set fetches must not go out from the page origin.
+  ensureIconifyBackgroundFetch()
+
   const root = document.getElementById("root")!
   root.className = "text-base antialiased min-h-screen bg-background"
 

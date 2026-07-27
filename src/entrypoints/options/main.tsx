@@ -18,6 +18,7 @@ import { getLocalConfig } from "@/utils/config/storage"
 import { DEFAULT_CONFIG } from "@/utils/constants/config"
 import { initI18n } from "@/utils/i18n"
 import { LocaleBoundary } from "@/utils/i18n/locale-boundary"
+import { ensureIconifyBackgroundFetch } from "@/utils/iconify/setup-background-fetch"
 import { renderPersistentReactRoot } from "@/utils/react-root"
 import { queryClient } from "@/utils/tanstack-query"
 import { applyTheme, getLocalThemeMode, isDarkMode } from "@/utils/theme"
@@ -40,6 +41,14 @@ function HydrateAtoms({
 }
 
 async function initApp() {
+  // Before the first `<Icon>` can mount. @iconify/react fetches its icon sets
+  // from api.iconify.design at render time, which as a *page* request is
+  // subject to the page's origin and CSP — fatal on the dashboard build, where
+  // this SPA is served from someone else's host (or off `file://`) and every
+  // icon would fail with "TypeError: Failed to fetch". Routing them through the
+  // background gives them the same privileged transport everything else uses.
+  ensureIconifyBackgroundFetch()
+
   const root = document.getElementById("root")!
   root.className = "antialiased bg-background"
 

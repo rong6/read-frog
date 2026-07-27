@@ -1,3 +1,4 @@
+import { runtimeFetch } from "@/utils/runtime-fetch"
 export async function googleTranslateLegacySingle(
   sourceText: string,
   fromLang: string,
@@ -17,7 +18,7 @@ export async function googleTranslateLegacySingle(
     .map((key) => `${key}=${params[key as keyof typeof params]}`)
     .join("&")
 
-  const resp = await fetch(`https://translate.googleapis.com/translate_a/single?${queryString}`, {
+  const resp = await runtimeFetch(`https://translate.googleapis.com/translate_a/single?${queryString}`, {
     method: "GET",
   }).catch((error) => {
     throw new Error(`Network error during translation: ${error.message}`)

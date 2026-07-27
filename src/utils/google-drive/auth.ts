@@ -3,6 +3,7 @@ import { browser, storage } from "#imports"
 import { env } from "@/env"
 import { GOOGLE_DRIVE_TOKEN_STORAGE_KEY } from "../constants/config"
 import { logger } from "../logger"
+import { runtimeFetch } from "@/utils/runtime-fetch"
 
 const GOOGLE_CLIENT_ID = env.WXT_GOOGLE_CLIENT_ID ?? "YOUR_CLIENT_ID"
 const GOOGLE_REDIRECT_URI = browser.identity.getRedirectURL()
@@ -153,7 +154,7 @@ export async function getIsAuthenticated(): Promise<boolean> {
  * Fetch Google user info using access token
  */
 export async function getGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> {
-  const res = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+  const res = await runtimeFetch("https://www.googleapis.com/oauth2/v2/userinfo", {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
 

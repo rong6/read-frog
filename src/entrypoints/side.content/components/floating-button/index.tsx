@@ -18,6 +18,7 @@ import { APP_NAME } from "@/utils/constants/app"
 import { i18n } from "@/utils/i18n"
 import { sendMessage } from "@/utils/message"
 import { cn } from "@/utils/styles/utils"
+import { IS_USERSCRIPT_RUNTIME } from "@/utils/runtime-fetch"
 import { matchDomainPattern } from "@/utils/url"
 import { enablePageTranslationAtom, isDraggingButtonAtom } from "../../atoms"
 import { shadowWrapper } from "../../index"
@@ -48,6 +49,8 @@ interface PendingDragState {
   buttonWidth: number
   buttonHeight: number
   hasActiveDrag: boolean
+  /** Touch only: the press was held long enough to reveal the controls. */
+  hasRevealedControls: boolean
   longPressTimerId: number
 }
 
@@ -160,7 +163,15 @@ export default function FloatingButton() {
   }, [])
 
   const handleFloatingButtonClick = () => {
-    if (floatingButton.clickAction === "translate") {
+    // A config imported from the extension can still say "panel", and there is
+    // no side panel to open in a userscript — fall back to translating rather
+    // than leaving the button inert.
+    const clickAction =
+      IS_USERSCRIPT_RUNTIME && floatingButton.clickAction === "panel"
+        ? "translate"
+        : floatingButton.clickAction
+
+    if (clickAction === "translate") {
       const nextEnabled = !translationState.enabled
       void sendMessage("tryToSetEnablePageTranslationOnContentScript", {
         enabled: nextEnabled,
@@ -206,6 +217,27 @@ export default function FloatingButton() {
     setIsDraggingButton(true)
   }
 
+  /**
+   * Touch equivalent of hovering the button.
+   *
+   * With a mouse, `onMouseEnter` reveals the settings/lock/hide controls and a
+   * click translates. A touch screen has no hover, and the synthetic mouseenter
+   * a tap produces arrives *together with* the click — so on a phone the only
+   * way to reach the settings was to tap (starting a translation), cancel it,
+   * and then tap a control. Long-press is the gesture that has no other job
+   * here, so it takes over the reveal.
+   *
+   * Dragging is unaffected: it starts from pointer movement past
+   * DRAG_START_DISTANCE_PX, which is a separate path in handlePointerMove.
+   */
+  const revealControlsOnLongPress = () => {
+    const pendingDrag = pendingDragRef.current
+    if (!pendingDrag || pendingDrag.hasActiveDrag) return
+
+    pendingDrag.hasRevealedControls = true
+    setIsHitAreaExpanded(true)
+  }
+
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.pointerType === "mouse" && e.button !== 0) return
 
@@ -231,7 +263,14 @@ export default function FloatingButton() {
       buttonWidth: mainButtonRect.width || 40,
       buttonHeight: mainButtonRect.height || 40,
       hasActiveDrag: false,
-      longPressTimerId: window.setTimeout(startActiveDrag, LONG_PRESS_DELAY_MS),
+      hasRevealedControls: false,
+      // A mouse keeps the original behaviour — hover already reveals the
+      // controls there, and turning a slow deliberate click into "reveal" would
+      // swallow the translation the user asked for.
+      longPressTimerId: window.setTimeout(
+        e.pointerType === "mouse" ? startActiveDrag : revealControlsOnLongPress,
+        LONG_PRESS_DELAY_MS,
+      ),
     }
   }
 
@@ -295,7 +334,8 @@ export default function FloatingButton() {
     setDragPreviewPosition(null)
     setIsDraggingButton(false)
 
-    if (shouldTriggerClick) {
+    // The long press was the gesture; releasing it should not also translate.
+    if (shouldTriggerClick && !pendingDrag.hasRevealedControls) {
       handleFloatingButtonClick()
     }
   }
@@ -307,6 +347,33 @@ export default function FloatingButton() {
   const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
     finishPointerInteraction(e, false)
   }
+
+  /**
+   * Collapse the controls when the next touch lands elsewhere.
+   *
+   * `onMouseLeave` does this for a mouse, but a touch screen never leaves — so
+   * without this the controls revealed by a long press would stay out forever,
+   * covering the page.
+   *
+   * `composedPath()` rather than `contains()`: the button lives in a shadow
+   * root, so a document-level listener sees the shadow *host* as the target and
+   * a containment check would say "outside" for taps on our own controls.
+   */
+  useEffect(() => {
+    if (!isHitAreaExpanded || isDropdownOpen || isDraggingButton) return
+
+    const handleOutsidePointerDown = (event: PointerEvent) => {
+      const container = containerRef.current
+      if (!container) return
+      if (event.composedPath().includes(container)) return
+      setIsHitAreaExpanded(false)
+    }
+
+    document.addEventListener("pointerdown", handleOutsidePointerDown, true)
+    return () => {
+      document.removeEventListener("pointerdown", handleOutsidePointerDown, true)
+    }
+  }, [isHitAreaExpanded, isDropdownOpen, isDraggingButton])
 
   const handleMouseEnter = () => {
     if (!isDraggingButton) {

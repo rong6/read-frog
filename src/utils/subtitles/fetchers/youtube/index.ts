@@ -33,6 +33,7 @@ import {
 import { extractPotToken } from "./pot-token"
 import { youtubeSubtitlesResponseSchema } from "./types"
 import { buildSubtitleUrl } from "./url-builder"
+import { runtimeFetch } from "@/utils/runtime-fetch"
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -376,7 +377,7 @@ export class YoutubeSubtitlesFetcher implements SubtitlesFetcher {
 
     for (let i = 0; i < MAX_FETCH_RETRIES; i++) {
       try {
-        const response = await fetch(url)
+        const response = await runtimeFetch(url)
 
         if (!response.ok) {
           const status = response.status

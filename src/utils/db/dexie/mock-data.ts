@@ -4,8 +4,8 @@ import {
   REQUEST_RECORD_MAX_COUNT,
 } from "@/entrypoints/background/db-cleanup"
 import { LLM_PROVIDER_MODELS, LLM_PROVIDER_TYPES } from "@/types/config/provider"
+import { addBatchRequestRecords, clearBatchRequestRecords } from "@/utils/batch-request-record"
 import { logger } from "@/utils/logger"
-import { db } from "./db"
 
 export async function generateMockBatchRequestRecords(
   count = REQUEST_RECORD_MAX_COUNT,
@@ -24,7 +24,7 @@ export async function generateMockBatchRequestRecords(
     }
   })
 
-  await db.batchRequestRecord.bulkAdd(records)
+  await addBatchRequestRecords(records)
   logger.info(`✅ Generated ${count} mock batch request records`)
 }
 
@@ -32,6 +32,6 @@ export async function generateMockBatchRequestRecords(
  * Clear all batch request records from the database
  */
 export async function clearMockData() {
-  await db.batchRequestRecord.clear()
+  await clearBatchRequestRecords()
   logger.info("🗑️  Cleared all batch request records")
 }

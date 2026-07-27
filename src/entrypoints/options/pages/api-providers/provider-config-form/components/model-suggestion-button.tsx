@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/base-ui/combobox"
 import { extractErrorMessage } from "@/utils/error/extract-message"
 import { i18n } from "@/utils/i18n"
+import { runtimeFetch } from "@/utils/runtime-fetch"
 
 interface ModelsResponse {
   object: string
@@ -42,7 +43,7 @@ export function ModelSuggestionButton({
         throw new Error(i18n.t("options.apiProviders.form.models.apiKeyRequired"))
       }
 
-      const response = await fetch(`${baseURL}/models`, {
+      const response = await runtimeFetch(`${baseURL}/models`, {
         headers: { Authorization: `Bearer ${apiKey}` },
       })
       if (!response.ok) {

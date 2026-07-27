@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { logger } from "../logger"
 import { clearAccessToken, getValidAccessToken } from "./auth"
+import { runtimeFetch } from "@/utils/runtime-fetch"
 
 const GOOGLE_DRIVE_API_BASE = "https://www.googleapis.com/drive/v3"
 const GOOGLE_DRIVE_UPLOAD_API_BASE = "https://www.googleapis.com/upload/drive/v3"
@@ -33,7 +34,7 @@ export async function findFileInAppData(fileName: string): Promise<GoogleDriveFi
     url.searchParams.set("q", `name='${fileName}'`)
     url.searchParams.set("fields", "files(id, name, mimeType, modifiedTime, size)")
 
-    const response = await fetch(url.toString(), {
+    const response = await runtimeFetch(url.toString(), {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -66,7 +67,7 @@ export async function downloadFile(fileId: string): Promise<string> {
 
     const url = `${GOOGLE_DRIVE_API_BASE}/files/${fileId}?alt=media`
 
-    const response = await fetch(url, {
+    const response = await runtimeFetch(url, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -116,7 +117,7 @@ export async function uploadFile(
       ? `${GOOGLE_DRIVE_UPLOAD_API_BASE}/files/${fileId}?uploadType=multipart&fields=id,name,mimeType,modifiedTime,size`
       : `${GOOGLE_DRIVE_UPLOAD_API_BASE}/files?uploadType=multipart&fields=id,name,mimeType,modifiedTime,size`
 
-    const response = await fetch(url, {
+    const response = await runtimeFetch(url, {
       method,
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -153,7 +154,7 @@ export async function deleteFile(fileId: string): Promise<void> {
 
     const url = `${GOOGLE_DRIVE_API_BASE}/files/${fileId}`
 
-    const response = await fetch(url, {
+    const response = await runtimeFetch(url, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${accessToken}`,

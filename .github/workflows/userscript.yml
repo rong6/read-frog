@@ -1,0 +1,179 @@
+name: Userscript - Build & Publish
+
+# Manual only, on purpose. This fork exists to produce a userscript, not to
+# track upstream's release cadence, and every publish here force-pushes the
+# `dashboard` branch and cuts a pre-release — not something that should happen
+# on a whim because a commit landed.
+on:
+  workflow_dispatch:
+    inputs:
+      dashboard_url:
+        description: Where the dashboard is served from. Must match the GitHub Pages URL.
+        required: true
+        default: https://rong6.github.io/read-frog/
+        type: string
+      deploy_dashboard:
+        description: Force-push the dashboard build to the `dashboard` branch.
+        required: false
+        default: true
+        type: boolean
+      publish_release:
+        description: Create a GitHub pre-release with read-frog.user.js attached.
+        required: false
+        default: true
+        type: boolean
+      run_checks:
+        description: Run lint, type-check and tests before building.
+        required: false
+        default: false
+        type: boolean
+
+env:
+  WXT_SKIP_ENV_VALIDATION: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+        shell: bash
+
+      # `@version` has to advance for Tampermonkey to offer an update, and
+      # package.json's version tracks upstream rather than this fork's builds.
+      # Appending the run number gives every build a distinct, ordered version.
+      - name: Resolve version
+        id: version
+        run: |
+          BASE=$(node -p "require('./package.json').version")
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "full=${BASE}-us.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "tag=userscript-v${BASE}-us.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: Checks
+        if: ${{ inputs.run_checks }}
+        run: |
+          pnpm lint
+          pnpm test --exclude="**/free-api.test.ts"
+        shell: bash
+
+      - name: Build userscript & dashboard
+        env:
+          RF_DASHBOARD_URL: ${{ inputs.dashboard_url }}
+          RF_USERSCRIPT_VERSION: ${{ steps.version.outputs.full }}
+          # Served from Pages next to the dashboard, so the update check always
+          # points at the newest build without depending on release metadata
+          # (the "latest release" API ignores pre-releases).
+          RF_UPDATE_URL: ${{ inputs.dashboard_url }}read-frog.user.js
+          RF_DOWNLOAD_URL: ${{ inputs.dashboard_url }}read-frog.user.js
+          # Optional. Only needed for Google Drive sync; WebDAV needs nothing.
+          # Set it under Settings → Secrets and variables → Actions.
+          WXT_GOOGLE_CLIENT_ID: ${{ secrets.WXT_GOOGLE_CLIENT_ID }}
+          # Optional overrides; the production readfrog.app values are the default.
+          WXT_API_URL: ${{ vars.WXT_API_URL }}
+          WXT_WEBSITE_URL: ${{ vars.WXT_WEBSITE_URL }}
+        run: pnpm build:us
+        shell: bash
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: read-frog-userscript-${{ steps.version.outputs.full }}
+          path: |
+            dist/userscript/read-frog.user.js
+            dist/dashboard
+          if-no-files-found: error
+
+      # The userscript ships alongside the dashboard so @updateURL resolves to a
+      # stable address. `.nojekyll` stops Pages from running Jekyll, which would
+      # otherwise drop any asset whose name begins with an underscore.
+      - name: Deploy dashboard to `dashboard` branch
+        if: ${{ inputs.deploy_dashboard }}
+        run: |
+          set -euo pipefail
+          cp dist/userscript/read-frog.user.js dist/dashboard/read-frog.user.js
+          touch dist/dashboard/.nojekyll
+
+          cd dist/dashboard
+          git init -q -b dashboard
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Dashboard build ${{ steps.version.outputs.full }} (${GITHUB_SHA::7})"
+          # Orphan branch, force-pushed: this is a build output, not history.
+          git push -q --force \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            dashboard
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+
+      - name: Create pre-release
+        if: ${{ inputs.publish_release }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          SIZE=$(du -h dist/userscript/read-frog.user.js | cut -f1)
+
+          cat > notes.md <<EOF
+          Unofficial userscript port of [Read Frog](https://github.com/mengxi-ream/read-frog).
+          Not affiliated with or endorsed by the upstream project.
+
+          | | |
+          |---|---|
+          | Upstream version | \`${{ steps.version.outputs.base }}\` |
+          | Build | \`${{ steps.version.outputs.full }}\` |
+          | Bundle size | ${SIZE} |
+          | Dashboard | ${{ inputs.dashboard_url }} |
+
+          ### Install
+
+          1. Install [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/).
+          2. Install [read-frog.user.js](${{ inputs.dashboard_url }}read-frog.user.js).
+          3. Open ${{ inputs.dashboard_url }} to configure providers.
+
+          The script auto-updates from the dashboard URL above, so you only install once.
+
+          See [USERSCRIPT.md](https://github.com/${GITHUB_REPOSITORY}/blob/main/USERSCRIPT.md) for what does and does not carry over from the extension.
+          EOF
+
+          gh release create "${{ steps.version.outputs.tag }}" \
+            dist/userscript/read-frog.user.js \
+            --title "Userscript ${{ steps.version.outputs.full }}" \
+            --notes-file notes.md \
+            --prerelease \
+            --target "${GITHUB_SHA}"
+        shell: bash
+
+      - name: Summary
+        run: |
+          {
+            echo "### Userscript ${{ steps.version.outputs.full }}"
+            echo
+            echo "- Bundle: \`$(du -h dist/userscript/read-frog.user.js | cut -f1)\`"
+            echo "- Dashboard URL: ${{ inputs.dashboard_url }}"
+            echo "- Install: ${{ inputs.dashboard_url }}read-frog.user.js"
+            echo
+            echo "If this is the first run, enable GitHub Pages:"
+            echo "Settings → Pages → Source: *Deploy from a branch* → \`dashboard\` / \`(root)\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+        shell: bash

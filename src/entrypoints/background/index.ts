@@ -21,9 +21,8 @@ import { ensureInitializedConfig } from "./config"
 import { setUpConfigBackup } from "./config-backup"
 import { initializeContextMenu, registerContextMenuListeners } from "./context-menu"
 import {
-  cleanupAllAiSegmentationCache,
-  cleanupAllSummaryCache,
-  cleanupAllTranslationCache,
+  clearAllAiSegmentationCache,
+  clearAllTranslationRelatedCache,
   setUpDatabaseCleanup,
 } from "./db-cleanup"
 import { setupEdgeTTSMessageHandlers } from "./edge-tts"
@@ -93,12 +92,11 @@ export default defineBackground({
     })
 
     onMessage("clearAllTranslationRelatedCache", async () => {
-      await cleanupAllTranslationCache()
-      await cleanupAllSummaryCache()
+      await clearAllTranslationRelatedCache()
     })
 
     onMessage("clearAiSegmentationCache", async () => {
-      await cleanupAllAiSegmentationCache()
+      await clearAllAiSegmentationCache()
     })
 
     newUserGuide()

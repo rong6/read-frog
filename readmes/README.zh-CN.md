@@ -1,3 +1,34 @@
+> [!IMPORTANT]
+> ## 这是一个非官方的油猴脚本移植版
+>
+> 本仓库是 [mengxi-ream/read-frog](https://github.com/mengxi-ream/read-frog) 的
+> **fork**，把浏览器扩展移植成了 **Tampermonkey / Violentmonkey 油猴脚本**，
+> 以便在无法安装扩展的手机浏览器上使用。
+>
+> **本项目与 Read Frog 官方项目及其作者没有任何从属关系，未获其背书，也不由其提供支持。**
+> 在这里遇到的问题请不要提到上游仓库——那几乎一定是移植的锅，不是他们的。
+> 请到[本 fork 的 issue](https://github.com/rong6/read-frog/issues) 反馈。
+>
+> 移植的做法是替换掉扩展平台层（存储、消息、网络、设置页），业务代码基本不动，
+> 所以功能和 UI 应当与上游一致。做不到一致的地方都列在
+> **[USERSCRIPT.md](./USERSCRIPT.md)** 里，提问题前请先看那份文档。
+>
+> 许可证与上游一致，为 **GPL-3.0**。注意上游是双许可、另外提供商业授权——
+> **那是上游作者的权利，本 fork 无权授予**。从这里取得的副本仅受 GPL-3.0 约束。
+>
+> ### 安装
+>
+> 1. 安装 [Tampermonkey](https://www.tampermonkey.net/) 或 [Violentmonkey](https://violentmonkey.github.io/)。
+> 2. 安装 **[read-frog.user.js](https://rong6.github.io/read-frog/read-frog.user.js)**。
+> 3. 打开 **<https://rong6.github.io/read-frog/>** 配置 AI 提供商。
+>
+> 想自己构建：见 [USERSCRIPT.md](./USERSCRIPT.md)。
+>
+> ---
+>
+> *以下是上游原始 README，保留以供参考。其中的商店链接、版本徽章和用户数指的是
+> 官方扩展，不是本移植版。*
+
 <div align="center"><a name="readme-top"></a>
 
 [![Read Frog banner][image-banner]][website]

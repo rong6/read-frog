@@ -3,6 +3,7 @@ import type { FloatingButtonSide } from "@/types/config/floating-button"
 import type { SelectionToolbarCustomAction } from "@/types/config/selection-toolbar"
 import type { PageTranslateRange } from "@/types/config/translate"
 import { BUILT_IN_AI_PROVIDER_ID } from "@/utils/providers/provider-registry"
+import { DEFAULT_WEBDAV_DIRECTORY } from "@/utils/webdav/types"
 import { CUSTOM_ACTION_TEMPLATES } from "./custom-action-templates"
 import { DEFAULT_TRANSLATE_PROMPTS_CONFIG } from "./prompt"
 import { buildDefaultProviderConfigList, DEFAULT_PROVIDER_CONFIG_LIST } from "./providers"
@@ -36,10 +37,15 @@ import { DEFAULT_TTS_CONFIG } from "./tts"
 export const CONFIG_STORAGE_KEY = "config"
 export const LAST_SYNCED_CONFIG_STORAGE_KEY = "lastSyncedConfig"
 export const GOOGLE_DRIVE_TOKEN_STORAGE_KEY = "__googleDriveToken"
+// WebDAV keeps its own three-way-merge base so it never clobbers Google Drive's.
+export const WEBDAV_LAST_SYNCED_CONFIG_STORAGE_KEY = "lastSyncedConfigWebdav"
+// Kept out of `config` for the same reason as the Google Drive token: the config
+// is uploaded, exported, backed up and diffed in the UI.
+export const WEBDAV_PASSWORD_STORAGE_KEY = "__webdavPassword"
 
 export const THEME_STORAGE_KEY = "theme"
 export const DEFAULT_DETECTED_CODE = "eng" as const
-export const CONFIG_SCHEMA_VERSION = 86
+export const CONFIG_SCHEMA_VERSION = 87
 
 export const DEFAULT_FLOATING_BUTTON_POSITION = 0.66
 export const DEFAULT_FLOATING_BUTTON_SIDE: FloatingButtonSide = "right"
@@ -219,6 +225,11 @@ export const DEFAULT_CONFIG: Config = {
     disabledBuiltInRules: [],
   },
   uiLanguage: "auto",
+  webdav: {
+    url: "",
+    username: "",
+    directory: DEFAULT_WEBDAV_DIRECTORY,
+  },
 }
 
 /**

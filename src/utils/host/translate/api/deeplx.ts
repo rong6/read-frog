@@ -2,6 +2,7 @@ import type { LangCodeISO6391 } from "@read-frog/definitions"
 import type { ProviderConfig } from "@/types/config/provider"
 import type { TranslationTextFormat } from "@/types/config/translate"
 import { DEFAULT_PROVIDER_CONFIG } from "@/utils/constants/providers"
+import { runtimeFetch } from "@/utils/runtime-fetch"
 
 type DeepLXProviderConfig = Extract<ProviderConfig, { provider: "deeplx" }>
 const API_KEY_PLACEHOLDER_RE = /\{\{apiKey\}\}/g
@@ -42,7 +43,7 @@ export async function deeplxTranslate(
 }
 
 async function fetchDirect(url: string, body: string, signal?: AbortSignal) {
-  const resp = await fetch(url, {
+  const resp = await runtimeFetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body,

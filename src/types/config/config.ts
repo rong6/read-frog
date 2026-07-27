@@ -10,6 +10,7 @@ import {
   doesProviderSupportsCapability,
   getProviderIdsForCapability,
 } from "@/utils/providers/provider-registry"
+import { webdavConfigSchema } from "@/utils/webdav/types"
 import { floatingButtonSchema } from "./floating-button"
 import { languageDetectionConfigSchema } from "./language-detection"
 import { isLLMProvider, providersConfigSchema } from "./provider"
@@ -121,6 +122,7 @@ export const configSchema = z
     siteControl: siteControlSchema,
     siteRules: siteRulesConfigSchema,
     uiLanguage: uiLanguageSchema,
+    webdav: webdavConfigSchema,
   })
   .superRefine((data, ctx) => {
     for (const featureKey of FEATURE_KEYS) {

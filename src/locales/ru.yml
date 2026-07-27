@@ -804,6 +804,67 @@ options:
             title: Объединённая конфигурация содержит ошибки валидации
             description: "Настройте различия ниже для исправления:"
           moreErrors: ...и ещё $1 ошибок
+      webdav:
+        title: Облачная синхронизация WebDAV
+        description: Синхронизирует конфигурацию с любым сервером WebDAV. Загружает, когда удалённая версия новее, выгружает, когда локальная версия новее
+        serverUrl: Адрес сервера
+        serverUrlPlaceholder: "https://dav.example.com/remote.php/dav/files/username"
+        username: Имя пользователя
+        usernamePlaceholder: Учётная запись WebDAV
+        password: Пароль
+        passwordPlaceholder: Пароль WebDAV или пароль приложения
+        directory: Удалённая папка
+        directoryPlaceholder: read-frog
+        notConfigured: Укажите адрес сервера и имя пользователя, чтобы включить синхронизацию WebDAV
+        test: Проверить подключение
+        testing: Проверка...
+        testSuccess: Подключение к серверу WebDAV установлено
+        testError: Не удалось подключиться к серверу WebDAV
+        sync: Синхронизировать с WebDAV
+        syncing: Синхронизация...
+        upload: Выгрузить
+        uploading: Выгрузка...
+        download: Загрузить
+        downloading: Загрузка...
+        syncSuccess:
+          uploaded: Локальная конфигурация загружена в облако
+          downloaded: Удалённая конфигурация применена
+          sameChanges: Изменения совпадают, синхронизировано
+          noChange: Уже синхронизировано
+          unresolved: Конфликты разрешены и синхронизированы
+        syncError: Ошибка синхронизации, попробуйте снова
+        lastSyncTime: Последняя синхронизация
+        unresolved:
+          title: Разрешение синхронизации конфигурации
+          description: Локальная и удалённая конфигурации отличаются. Пожалуйста, выберите, какую версию сохранить для каждого поля.
+          resolved: Разрешено
+          unresolved: Не разрешено
+          localValue: Локальное значение
+          remoteValue: Удалённое значение
+          useLocal: Использовать локальное
+          useRemote: Использовать удалённое
+          useAllLocal: Использовать всё локальное
+          useAllRemote: Использовать всё удалённое
+          reset: Сбросить выбор
+          progress: Разрешено $1/$2 изменений
+          confirm: Подтвердить синхронизацию
+          cancel: Отмена
+          hasUnresolvedInChildren: ⚠ Содержит неразрешённые изменения
+          item: элемент
+          items: элементов
+          unresolvedPrompt: "[Не разрешено - Выберите]"
+          localLatest: Локальная последняя
+          remoteLatest: Удалённая последняя
+          bothChanged: Оба изменены
+          localChanged: Локальное изменено
+          remoteChanged: Удалённое изменено
+          configValid: Конфигурация действительна
+          configInvalid: Конфигурация недействительна
+          resolveToContinue: Разрешите конфликты для продолжения
+          validationAlert:
+            title: Объединённая конфигурация содержит ошибки валидации
+            description: "Настройте различия ниже для исправления:"
+          moreErrors: ...и ещё $1 ошибок
     backup:
       title: Резервное копирование конфигурации
       description: Автоматические резервные копии создаются каждый час при изменении конфигурации. Вы можете восстановить предыдущие конфигурации здесь. (Максимум $1 резервных копий)

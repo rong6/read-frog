@@ -919,6 +919,67 @@ options:
             title: 合并后的配置存在验证错误
             description: 请调整下方差异以修复：
           moreErrors: ...还有 $1 个错误
+      webdav:
+        title: WebDAV 云端同步
+        description: 将配置同步到任意 WebDAV 服务器。远端配置较新时下载，本地配置较新时上传
+        serverUrl: 服务器地址
+        serverUrlPlaceholder: "https://dav.example.com/remote.php/dav/files/username"
+        username: 用户名
+        usernamePlaceholder: WebDAV 账号
+        password: 密码
+        passwordPlaceholder: WebDAV 密码或应用专用密码
+        directory: 远端目录
+        directoryPlaceholder: read-frog
+        notConfigured: 请填写服务器地址和用户名以启用 WebDAV 同步
+        test: 测试连接
+        testing: 测试中...
+        testSuccess: 已成功连接 WebDAV 服务器
+        testError: 无法连接 WebDAV 服务器
+        sync: 同步到 WebDAV
+        syncing: 同步中...
+        upload: 上传
+        uploading: 上传中...
+        download: 下载
+        downloading: 下载中...
+        syncSuccess:
+          uploaded: 本地配置已上传至云端
+          downloaded: 已应用远程配置
+          sameChanges: 本地和远程修改一致，已同步
+          noChange: 已是最新状态
+          unresolved: 冲突已解决并同步至本地和云端
+        syncError: 同步失败，请重试
+        lastSyncTime: 最后同步时间
+        unresolved:
+          title: 配置同步解决
+          description: 本地与云端配置存在差异，请选择每个字段要保留的版本。
+          resolved: 已解决
+          unresolved: 未解决
+          localValue: 本地值
+          remoteValue: 远端值
+          useLocal: 使用本地
+          useRemote: 使用远端
+          useAllLocal: 全选本地
+          useAllRemote: 全选远端
+          reset: 撤销选择
+          progress: 已解决 $1/$2 个更改
+          confirm: 确认同步
+          cancel: 取消
+          hasUnresolvedInChildren: ⚠ 包含待解决项
+          item: 项
+          items: 项
+          unresolvedPrompt: "[待解决 - 请选择]"
+          localLatest: 本地最新
+          remoteLatest: 远端最新
+          bothChanged: 双方已更改
+          localChanged: 本地已更改
+          remoteChanged: 远端已更改
+          configValid: 配置有效
+          configInvalid: 配置无效
+          resolveToContinue: 解决冲突后继续
+          validationAlert:
+            title: 合并后的配置存在验证错误
+            description: 请调整下方差异以修复：
+          moreErrors: ...还有 $1 个错误
     backup:
       title: 配置备份
       description: 如果配置发生变化，每小时会自动创建备份。您可以在这里恢复之前的配置。（最多 $1 个备份）

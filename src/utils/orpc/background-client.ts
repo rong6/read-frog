@@ -3,6 +3,7 @@ import { createORPCClient } from "@orpc/client"
 import { RPCLink } from "@orpc/client/fetch"
 import { ORPC_PREFIX } from "@read-frog/definitions"
 import { env } from "@/env"
+import { runtimeFetch } from "@/utils/runtime-fetch"
 
 const link = new RPCLink({
   url: `${env.WXT_API_URL}${ORPC_PREFIX}`,
@@ -10,7 +11,7 @@ const link = new RPCLink({
     "x-orpc-source": "extension",
   },
   fetch: (request, init) => {
-    return fetch(request, {
+    return runtimeFetch(request, {
       ...init,
       credentials: "include",
     })

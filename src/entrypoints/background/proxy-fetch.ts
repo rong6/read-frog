@@ -6,6 +6,19 @@ import { DEFAULT_PROXY_CACHE_TTL_MS } from "@/utils/constants/proxy-fetch"
 import { logger } from "@/utils/logger"
 import { onMessage } from "@/utils/message"
 import { SessionCacheGroupRegistry } from "../../utils/session-cache/session-cache-group-registry"
+import { IS_USERSCRIPT_RUNTIME, runtimeFetch, runtimeFetchBinary } from "@/utils/runtime-fetch"
+
+/** The group `utils/auth/auth-client.ts` files its session requests under. */
+const AUTH_CACHE_GROUP_KEY = "auth"
+
+function isTopFrame() {
+  try {
+    return window.top === window.self
+  } catch {
+    // Cross-origin parent — we are in a subframe.
+    return false
+  }
+}
 
 function encodeArrayBufferToBase64(buffer: ArrayBuffer) {
   const bytes = new Uint8Array(buffer)
@@ -30,6 +43,14 @@ export function proxyFetch() {
   async function invalidateAllCache() {
     logger.info("[ProxyFetch] Invalidating all cache")
     await SessionCacheGroupRegistry.clearAllCacheGroup()
+  }
+
+  // Only the auth group: a sign-in says nothing about the blog posts or provider
+  // logos sitting in the other groups, and re-fetching those has a real cost.
+  async function invalidateAuthCache() {
+    logger.info("[ProxyFetch] Invalidating auth cache")
+    const sessionCache = await getSessionCache(AUTH_CACHE_GROUP_KEY)
+    await sessionCache.clear()
   }
 
   // Listen for cookie changes to invalidate auth-related cache
@@ -83,6 +104,29 @@ export function proxyFetch() {
           )
         }
       }
+    })
+  }
+
+  // …which never fires in the userscript build: no script manager exposes a
+  // cookie observer, so `browser.cookies.onChanged` is an inert stub. Left as
+  // it is, a sign-in or sign-out on the website in another tab would leave this
+  // page holding a cached session for the whole lifetime of the tab, and the
+  // account menu would keep showing the state the user just changed.
+  //
+  // Coming back to the tab is both the cheapest signal we have and the moment
+  // that matters, since it is when the stale menu is about to be looked at. The
+  // analytics atom re-reads its preference on `visibilitychange` for the same
+  // reason.
+  //
+  // Top frame only. The userscript runs a copy of this in every frame, but the
+  // session cache is shared, so one invalidation per page is the whole job —
+  // the same guard the alarms use.
+  if (IS_USERSCRIPT_RUNTIME && isTopFrame()) {
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") return
+      invalidateAuthCache().catch((error) =>
+        logger.error("[ProxyFetch] Failed to invalidate auth cache on focus:", error),
+      )
     })
   }
 
@@ -151,7 +195,10 @@ export function proxyFetch() {
       await invalidateCache(cacheGroupKey)
     }
 
-    const response = await fetch(url, {
+    // Base64 callers want the raw bytes back (proxied images/SVGs); text-mode
+    // streaming would corrupt them.
+    const transport = responseType === "base64" ? runtimeFetchBinary : runtimeFetch
+    const response = await transport(url, {
       method: finalMethod,
       headers: headers ? new Headers(headers) : undefined,
       body,

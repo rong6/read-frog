@@ -11,22 +11,31 @@ import {
 import { floatingButtonClickActionSchema } from "@/types/config/floating-button"
 import { configFieldsAtomMap } from "@/utils/atoms/config"
 import { i18n } from "@/utils/i18n"
+import { IS_USERSCRIPT_RUNTIME } from "@/utils/runtime-fetch"
 import { ConfigCard } from "../../components/config-card"
 
 export function FloatingButtonClickAction() {
   const [floatingButton, setFloatingButton] = useAtom(configFieldsAtomMap.floatingButton)
 
   // Resolved at render (not module scope) so labels follow a runtime UI-language switch.
-  const items = [
-    {
-      value: "panel",
-      label: i18n.t("options.floatingButtonAndToolbar.floatingButton.clickAction.panel"),
-    },
-    {
-      value: "translate",
-      label: i18n.t("options.floatingButtonAndToolbar.floatingButton.clickAction.translate"),
-    },
-  ] satisfies Array<{ value: FloatingButtonClickActionValue; label: string }>
+  const items = (
+    [
+      // The side panel has no userscript equivalent, so offering it there would
+      // just be a button that does nothing.
+      ...(IS_USERSCRIPT_RUNTIME
+        ? []
+        : [
+            {
+              value: "panel" as const,
+              label: i18n.t("options.floatingButtonAndToolbar.floatingButton.clickAction.panel"),
+            },
+          ]),
+      {
+        value: "translate" as const,
+        label: i18n.t("options.floatingButtonAndToolbar.floatingButton.clickAction.translate"),
+      },
+    ] satisfies Array<{ value: FloatingButtonClickActionValue; label: string }>
+  )
 
   return (
     <ConfigCard

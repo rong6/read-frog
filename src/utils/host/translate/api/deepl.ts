@@ -1,6 +1,7 @@
 import type { LangCodeISO6391 } from "@read-frog/definitions"
 import type { ProviderConfig } from "@/types/config/provider"
 import type { TranslationTextFormat } from "@/types/config/translate"
+import { runtimeFetch } from "@/utils/runtime-fetch"
 
 type DeepLProviderConfig = Extract<ProviderConfig, { provider: "deepl" }>
 
@@ -65,7 +66,7 @@ async function fetchDirect(
   body: string,
   signal?: AbortSignal,
 ): Promise<Response> {
-  const resp = await fetch(url, {
+  const resp = await runtimeFetch(url, {
     method: "POST",
     headers: {
       Authorization: `DeepL-Auth-Key ${apiKey}`,

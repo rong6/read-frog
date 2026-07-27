@@ -1,4 +1,5 @@
 import type { TranslationTextFormat } from "@/types/config/translate"
+import { runtimeFetch } from "@/utils/runtime-fetch"
 
 export async function microsoftTranslate(
   source: string,
@@ -33,7 +34,7 @@ export async function microsoftTranslate(
   // translationOnly page-mode fragments.
   const textType = options?.textFormat === "html" ? "html" : "plain"
 
-  const resp = await fetch(
+  const resp = await runtimeFetch(
     `https://api-edge.cognitive.microsofttranslator.com/translate?from=${effectiveFromLang}&to=${toLang}&api-version=3.0&includeSentenceLength=true&textType=${textType}`,
     {
       method: "POST",
@@ -86,7 +87,7 @@ export async function microsoftTranslate(
 
 export async function refreshMicrosoftToken(signal?: AbortSignal): Promise<string> {
   try {
-    const resp = await fetch("https://edge.microsoft.com/translate/auth", { signal })
+    const resp = await runtimeFetch("https://edge.microsoft.com/translate/auth", { signal })
 
     if (!resp.ok) {
       throw new Error(`Failed to refresh Microsoft token: ${resp.status} ${resp.statusText}`)
