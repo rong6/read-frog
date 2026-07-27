@@ -1,0 +1,1 @@
+import{Kr as e,tr as t}from"./button-kPcVx3ym.js";import{pt as n}from"./helpers-Bk_FpMCG.js";function r(n){return t.t(`languages.${e(n)}`)}function i(e){return`${r(e)} (${n[e]})`}export{r as n,i as t};

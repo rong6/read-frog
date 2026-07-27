@@ -1,0 +1,1 @@
+var e=`analyticsEnabled`,t=`analyticsInstallId`,n=`feature_used`,r=`translation_requested`,i=`translation_prompt_used`,a=`promptExperimentCohortV1`,o=`new-user-default-translate-prompt-v1`;function s(e=`chrome`){return e!==`firefox`}var c=s();export{r as a,o as c,i,n,c as o,t as r,a as s,e as t};

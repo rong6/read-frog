@@ -1,0 +1,1 @@
+function e(e){function t(e){if(Array.isArray(e))return e.map(t);if(e&&typeof e==`object`){let n={};for(let r in e)r!==`apiKey`&&(n[r]=t(e[r]));return n}return e}try{return t(e)}catch{return e}}export{e as t};

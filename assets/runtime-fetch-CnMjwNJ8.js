@@ -1,0 +1,1 @@
+import{Ef as e,Tf as t}from"./button-kPcVx3ym.js";var n=async(n,r)=>e()?await t.fetch(n,r):await fetch(n,r),r=n,i=n,a=n;export{r as n,a as r,i as t};
